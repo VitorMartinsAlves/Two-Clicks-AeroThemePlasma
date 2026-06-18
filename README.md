@@ -1,5 +1,118 @@
 # Two-Clicks-AeroThemePlasma
 
+# English
+
+This repository is a customized AeroThemePlasma distribution focused on reducing the number of manual steps required to install and tune a Windows 7 Aero-style KDE Plasma setup, especially on Arch/CachyOS systems.
+
+The goal is not to replace the original project or claim authorship over the theme. This repository exists as a more direct personal/testing build with helper scripts that automate parts that usually need to be done manually after installation.
+
+## Credits to the original project
+
+The theme, Plasma/KWin components, plasmoids, assets, and most of the code belong to the original project:
+
+- Original repository: https://gitgud.io/aeroshell/atp/aerothemeplasma
+- Official read-only GitHub mirror: https://github.com/aeroshell-desktop/aerothemeplasma
+- Original project: AeroThemePlasma, by the AeroShell group
+
+This repository preserves the original credits below and should be treated as a fork/customization. If you want to follow upstream development, official issues, licensing details, and canonical documentation, use the original GitGud repository.
+
+## Purpose of this repository
+
+This repository exists to make the setup closer to "two clicks":
+
+- install common dependencies automatically on Arch/CachyOS when possible
+- re-run scripts on the host when the terminal is inside a Flatpak sandbox
+- build and install the main components with clearer error messages
+- generate installation manifests to make uninstall/debug easier
+- automate optional terminal tweaks to look closer to the Windows 7 Command Prompt
+- create a `winfetch` wrapper based on `fastfetch --logo "Windows 7"`
+
+## Changes made in this fork
+
+### Main installer
+
+[install.sh](./install.sh) was rewritten to be more defensive and automated:
+
+- uses `bash` with `set -Eeuo pipefail`
+- detects when the terminal is inside Flatpak and tries to re-run on the host through `flatpak-spawn` or `host-spawn`
+- prevents direct execution as root
+- detects `sudo` or `doas`
+- installs common dependencies on Arch/CachyOS with `pacman -S --needed`
+- supports `--skip-deps` to skip dependency installation
+- supports `--no-host-spawn` to prevent re-execution outside the sandbox
+- supports `--skip-x11`, preserving the upstream option
+- clones or updates helper repositories in `repos/`
+- builds and installs components through a shared CMake helper
+- copies manifests to `manifest/`
+- applies a small local patch to KWin component CMakeLists files to remove `add_definitions(${Qt6Widgets_DEFINITIONS})` when needed
+- updates the MIME database in `/usr/share/mime`
+
+### Terminal setup
+
+[scripts/setup_terminal.sh](./scripts/setup_terminal.sh) was added to automate the optional terminal setup documented upstream:
+
+- adds a managed block to `~/.bashrc`
+- optionally configures `fish` with `--fish`
+- creates the Konsole profile `AeroThemePlasma.profile`
+- creates the `WindowsCommandPrompt` color scheme
+- installs the TerminalVector font with `--install-font`
+- creates `~/.local/bin/winfetch` as a wrapper for `fastfetch --logo "Windows 7"`
+- adds `~/.local/bin` to `PATH` through the managed shell block
+
+Usage:
+
+```bash
+bash scripts/setup_terminal.sh --install-font
+```
+
+### Documentation
+
+[INSTALL.md](./INSTALL.md) received a note pointing to `scripts/setup_terminal.sh`, so the terminal setup does not need to be done fully by hand.
+
+### What is not included
+
+Geckium is not included in this repository. It remains an external project by AngelBruni:
+
+- https://github.com/angelbruni/Geckium
+
+If you want to use Geckium together with AeroThemePlasma, install it separately by following Geckium's official documentation. This repository does not redistribute its files.
+
+## How to use this version
+
+Full installation:
+
+```bash
+bash install.sh
+```
+
+Without automatic dependency installation:
+
+```bash
+bash install.sh --skip-deps
+```
+
+Without X11 components:
+
+```bash
+bash install.sh --skip-x11
+```
+
+Optional terminal setup:
+
+```bash
+bash scripts/setup_terminal.sh --install-font
+```
+
+After installation, restart the Plasma session.
+
+## Warning
+
+This project changes system components, themes, KWin, Plasma, and the terminal if you run the helper scripts, and it can break your session if used with a different Plasma version than expected. Make a backup before using it.
+
+---
+
+# Portugues
+
 Este repositorio e uma distribuicao personalizada do AeroThemePlasma com foco em reduzir o numero de passos manuais para instalar e ajustar o visual Windows 7 Aero em KDE Plasma, especialmente em sistemas Arch/CachyOS.
 
 O objetivo nao e substituir o projeto original nem reivindicar autoria sobre o tema. A ideia deste repo e manter uma versao mais direta para uso pessoal/testes, com scripts auxiliares para automatizar partes que normalmente precisam ser feitas na mao depois da instalacao.
