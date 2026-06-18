@@ -210,6 +210,8 @@ echo -e "Microsoft Windows [Version 6.1.7600]\nCopyright (c) 2009 Microsoft Corp
 
 3. In the terminal emulator of your choice (e.g Konsole), set the font to [TerminalVector](https://www.yohng.com/software/terminalvector.html), size 9pt. Disable smooth font rendering and bold text, reduce the line spacing and margins to 0px, set the cursor shape to underline, and enable cursor blinking.
 
+   You can automate most of this with `scripts/setup_terminal.sh` from this repository. It writes the Bash prompt block, creates a Konsole profile, and can optionally download/install TerminalVector with `--install-font`. If you use Fish, pass `--fish` as well.
+
 4. Install [PlymouthVista](https://github.com/furkrn/PlymouthVista) which supports Windows 7 boot animations, and features a more detailed setup guide.
 5. Install [ExecBin](https://gitgud.io/catpswin56/execbin) for a more accurate "Run..." application.
 

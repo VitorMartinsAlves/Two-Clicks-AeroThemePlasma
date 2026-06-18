@@ -1,4 +1,115 @@
-# AeroThemePlasma
+# Two-Clicks-AeroThemePlasma
+
+Este repositorio e uma distribuicao personalizada do AeroThemePlasma com foco em reduzir o numero de passos manuais para instalar e ajustar o visual Windows 7 Aero em KDE Plasma, especialmente em sistemas Arch/CachyOS.
+
+O objetivo nao e substituir o projeto original nem reivindicar autoria sobre o tema. A ideia deste repo e manter uma versao mais direta para uso pessoal/testes, com scripts auxiliares para automatizar partes que normalmente precisam ser feitas na mao depois da instalacao.
+
+## Creditos ao projeto original
+
+Todo o tema, componentes Plasma/KWin, plasmoids, assets e a maior parte do codigo pertencem ao projeto original:
+
+- Repositorio original: https://gitgud.io/aeroshell/atp/aerothemeplasma
+- Espelho GitHub oficial/read-only: https://github.com/aeroshell-desktop/aerothemeplasma
+- Projeto original: AeroThemePlasma, do grupo AeroShell
+
+Este repo preserva os creditos originais abaixo e deve ser tratado como fork/customizacao. Se voce quer acompanhar desenvolvimento upstream, issues oficiais, licenca e documentacao canonica, use o repositorio original no GitGud.
+
+## Intuito deste repo
+
+Este repo existe para deixar o setup mais proximo de "dois cliques":
+
+- instalar dependencias comuns automaticamente em Arch/CachyOS quando possivel
+- reexecutar scripts no host quando o terminal estiver dentro de sandbox Flatpak
+- compilar e instalar os componentes principais com mensagens de erro mais claras
+- gerar manifestos de instalacao para facilitar uninstall/debug
+- automatizar ajustes opcionais do terminal para ficar mais parecido com o Command Prompt do Windows 7
+- criar um wrapper `winfetch` baseado em `fastfetch --logo "Windows 7"`
+
+## Alteracoes feitas neste fork
+
+### Instalador principal
+
+O [install.sh](./install.sh) foi reescrito para ser mais defensivo e automatizado:
+
+- usa `bash` com `set -Eeuo pipefail`
+- detecta terminal dentro de Flatpak e tenta reexecutar no host com `flatpak-spawn` ou `host-spawn`
+- impede execucao direta como root
+- detecta `sudo` ou `doas`
+- instala dependencias comuns em Arch/CachyOS com `pacman -S --needed`
+- aceita `--skip-deps` para pular dependencias
+- aceita `--no-host-spawn` para impedir reexecucao fora do sandbox
+- aceita `--skip-x11`, preservando a opcao upstream
+- clona ou atualiza os repositorios auxiliares em `repos/`
+- compila e instala componentes com uma funcao comum de CMake
+- copia manifestos para `manifest/`
+- aplica um pequeno patch local nos CMakeLists dos componentes KWin para remover `add_definitions(${Qt6Widgets_DEFINITIONS})` quando necessario
+- atualiza o banco MIME em `/usr/share/mime`
+
+### Ajuste de terminal
+
+Foi adicionado [scripts/setup_terminal.sh](./scripts/setup_terminal.sh) para automatizar a parte opcional do terminal documentada pelo upstream:
+
+- adiciona bloco controlado ao `~/.bashrc`
+- opcionalmente configura `fish` com `--fish`
+- cria perfil do Konsole `AeroThemePlasma.profile`
+- cria esquema de cores `WindowsCommandPrompt`
+- instala a fonte TerminalVector com `--install-font`
+- cria `~/.local/bin/winfetch` como wrapper para `fastfetch --logo "Windows 7"`
+- coloca `~/.local/bin` no `PATH` pelo bloco do shell
+
+Uso:
+
+```bash
+bash scripts/setup_terminal.sh --install-font
+```
+
+### Documentacao
+
+O [INSTALL.md](./INSTALL.md) recebeu uma nota apontando para `scripts/setup_terminal.sh`, para que o ajuste de terminal nao precise ser feito todo manualmente.
+
+### O que nao esta incluido
+
+Geckium nao esta incluido neste repo. Ele continua sendo um projeto externo de AngelBruni:
+
+- https://github.com/angelbruni/Geckium
+
+Se voce quiser usar Geckium junto com AeroThemePlasma, instale separadamente seguindo a documentacao oficial do Geckium. Este repositorio nao redistribui os arquivos dele.
+
+## Como usar esta versao
+
+Instalacao completa:
+
+```bash
+bash install.sh
+```
+
+Sem instalar dependencias automaticamente:
+
+```bash
+bash install.sh --skip-deps
+```
+
+Sem componentes X11:
+
+```bash
+bash install.sh --skip-x11
+```
+
+Ajuste opcional do terminal:
+
+```bash
+bash scripts/setup_terminal.sh --install-font
+```
+
+Depois da instalacao, reinicie a sessao do Plasma.
+
+## Aviso
+
+Este projeto altera componentes de sistema, temas, KWin, Plasma e terminal se voce executar scripts auxiliares, e pode quebrar sua sessao se usado em uma versao de Plasma diferente da esperada. Faca backup antes de usar.
+
+---
+
+# AeroThemePlasma upstream README
 
 ## HIATUS NOTICE: This is a long overdue announcement, but development will slow down significantly as a result of real life priorities I have to take care of first. Estimated time until I continue development is unknown, but don't expect anything significant in the following few months, until August, probably. Thank you for your patience and support.
 
