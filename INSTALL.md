@@ -186,7 +186,13 @@ Uninstalling AeroThemePlasma can be done by running the following script:
 $ bash uninstall.sh
 ```
 
-This will go through almost every build directory and run `sudo make uninstall` or `sudo ninja uninstall` in those directories. After this, the `libplasma` package should be reinstalled using your distro's package manager. 
+The script reads the CMake `install_manifest.txt` files saved in `manifest/` and the project build directories, then removes only existing paths recorded under `/usr`. It asks for confirmation before deleting anything. For a non-interactive run, pass `--yes`:
+
+```bash
+$ bash uninstall.sh --yes
+```
+
+The source-built `libplasma` files are included when their manifest is available. Reinstall your distribution's `libplasma` package after the removal. 
 
 ```bash
 # On Arch Linux
