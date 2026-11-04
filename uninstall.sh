@@ -138,6 +138,11 @@ fi
 log "Removendo arquivos registrados nos manifestos..."
 "$SU_CMD" rm -f -- "${INSTALLED_FILES[@]}"
 
+# Refresh the shared MIME cache after removing installed MIME definitions.
+if command -v update-mime-database >/dev/null 2>&1; then
+    "$SU_CMD" update-mime-database /usr/share/mime
+fi
+
 # Reset the first-run wizard flag; a quoted tilde would be treated literally.
 if command -v kwriteconfig6 >/dev/null 2>&1; then
     kwriteconfig6 --file "$HOME/.config/aerothemeplasmarc" \
