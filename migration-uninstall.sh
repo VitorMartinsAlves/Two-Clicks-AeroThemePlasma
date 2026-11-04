@@ -1,5 +1,6 @@
-#!/bin/bash
-CUR_DIR=$(pwd)
+#!/usr/bin/env bash
+CUR_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+cd "$CUR_DIR"
 QDBUS_BIN="qdbus6"
 
 SU_CMD=sudo
@@ -28,7 +29,7 @@ fi
 
 PLASMASHELL=$($QDBUS_BIN org.kde.plasmashell /PlasmaShell shell)
 
-if [ $PLASMASHELL == "io.gitgud.wackyideas.desktop" ]; then
+if [[ "$PLASMASHELL" == "io.gitgud.wackyideas.desktop" ]]; then
     echo -e "You shouldn't run the uninstall script from AeroThemePlasma itself."
     echo -e "Please run the uninstall script from the Plasma session or another session."
     exit
@@ -74,16 +75,16 @@ function uninstall_cmake_component {
     fi
 }
 
-for path in ${BUILD_FILES[@]}; do
+for path in "${BUILD_FILES[@]}"; do
     uninstall_cmake_component "$path"
 done
 
 function uninstall_prompt {
     echo -e "Do you want to uninstall: $1? (y/N)"
-    if [ ! -z "$2" ]; then
+    if [[ -n "${2:-}" ]]; then
         echo -e "The following will be removed: $2"
     fi
-    read answer
+    read -r answer
     if [ "$answer" != "${answer#[Yy]}" ]; then
         return 1
     else
@@ -170,7 +171,7 @@ uninstall_prompt "Mimetypes" "$MIMETYPE_DIR/application-vnd.microsoft.portable-e
 if [ "$?" == 1 ]; then
     echo "Uninstalling mimetypes..."
     for filename in "$PWD/misc/mimetype/"*; do
-        MIME=$(basename $filename)
+        MIME="$(basename -- "$filename")"
         rm "$MIMETYPE_DIR/$MIME"
     done
     update-mime-database "$HOME/.local/share/mime"
@@ -180,7 +181,7 @@ fi
 uninstall_prompt "KWin JS effects"
 if [ "$?" == 1 ]; then
     echo "Uninstalling KWin effects (JS)..."
-    for entry in ${KWIN_EFFECTS[@]}; do
+    for entry in "${KWIN_EFFECTS[@]}"; do
         uninstall_component "$entry" "KWin/Effect"
     done
     echo "Done."
