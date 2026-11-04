@@ -3,6 +3,14 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 ORIGINAL_ARGS=("$@")
+TEMP_DIR=""
+
+cleanup() {
+    if [[ -n "$TEMP_DIR" && -d "$TEMP_DIR" ]]; then
+        rm -rf -- "$TEMP_DIR"
+    fi
+}
+trap cleanup EXIT
 
 if [[ -n "${FLATPAK_ID:-}" && -z "${ATP_TERMINAL_HOST_SPAWNED:-}" ]]; then
     if command -v flatpak-spawn >/dev/null 2>&1; then
@@ -119,6 +127,15 @@ replace_block() {
     tmp="$(mktemp)"
 
     if [[ -f "$file" ]]; then
+        if ! awk -v start="$start_marker" -v end="$end_marker" '
+            $0 == start { if (inside) exit 1; inside = 1; next }
+            $0 == end { if (!inside) exit 1; inside = 0; next }
+            END { if (inside) exit 1 }
+        ' "$file"; then
+            rm -f -- "$tmp"
+            die "Bloco de configuracao incompleto ou fora de ordem em $file. Corrija os marcadores antes de executar novamente."
+        fi
+
         awk -v start="$start_marker" -v end="$end_marker" '
             $0 == start { skip = 1; next }
             $0 == end { skip = 0; next }
@@ -301,26 +318,26 @@ EOF
 
 install_font() {
     local fonts_dir="$HOME/.local/share/fonts"
-    local tmp_dir
     local zip_path
 
     ensure_dependency curl
     ensure_dependency unzip
 
     mkdir -p "$fonts_dir"
-    tmp_dir="$(mktemp -d)"
-    zip_path="$tmp_dir/TerminalVector.zip"
+    TEMP_DIR="$(mktemp -d)"
+    zip_path="$TEMP_DIR/TerminalVector.zip"
 
     log "Baixando $FONT_NAME"
-    curl -L "$FONT_URL" -o "$zip_path"
-    unzip -o "$zip_path" -d "$tmp_dir" >/dev/null
+    curl --fail --location --silent --show-error --retry 3 \
+        --connect-timeout 15 --max-time 120 "$FONT_URL" -o "$zip_path"
+    unzip -o "$zip_path" -d "$TEMP_DIR" >/dev/null
 
     local font_file
-    font_file="$(find "$tmp_dir" -type f \( -iname '*.ttf' -o -iname '*.otf' \) | head -n 1)"
+    font_file="$(find "$TEMP_DIR" -type f \( -iname '*.ttf' -o -iname '*.otf' \) -print -quit)"
     [[ -n "$font_file" ]] || die "Nao encontrei nenhum arquivo de fonte no pacote baixado."
 
     log "Instalando fonte em $fonts_dir"
-    cp "$font_file" "$fonts_dir/"
+    cp -- "$font_file" "$fonts_dir/"
     if command -v fc-cache >/dev/null 2>&1; then
         fc-cache -f "$fonts_dir" >/dev/null
     fi

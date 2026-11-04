@@ -30,7 +30,7 @@ ORIGINAL_ARGS=("$@")
 INSTALL_ARGS=()
 SKIP_DEPS=0
 NO_HOST_SPAWN=0
-ASSUME_YES=1
+ASSUME_YES=0
 
 for arg in "$@"; do
     case "$arg" in
@@ -177,16 +177,12 @@ install_dependencies() {
 }
 
 set_install_dirs() {
-    if [[ -z "${LIBEXEC_DIR:-}" ]]; then
-        LIBEXEC_DIR=lib
-    fi
-    if [[ -z "${UAC_LIBEXEC_DIR:-}" ]]; then
-        UAC_LIBEXEC_DIR=lib
-    fi
-
     if command -v dnf >/dev/null 2>&1; then
-        LIBEXEC_DIR=libexec
-        UAC_LIBEXEC_DIR=libexec/kf6
+        LIBEXEC_DIR="${LIBEXEC_DIR:-libexec}"
+        UAC_LIBEXEC_DIR="${UAC_LIBEXEC_DIR:-libexec/kf6}"
+    else
+        LIBEXEC_DIR="${LIBEXEC_DIR:-lib}"
+        UAC_LIBEXEC_DIR="${UAC_LIBEXEC_DIR:-lib}"
     fi
 
     export LIBEXEC_DIR UAC_LIBEXEC_DIR

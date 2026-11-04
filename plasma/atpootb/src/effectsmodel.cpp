@@ -23,6 +23,8 @@
 #include <QDBusMessage>
 #include <QDBusPendingCall>
 #include <QDirIterator>
+#include <QDebug>
+#include <algorithm>
 #include <QQuickRenderControl>
 #include <QStandardPaths>
 #include <QWindow>
@@ -446,11 +448,14 @@ void EffectsModel::load(LoadOptions options)
             }
 
             const QList<bool> supportedValues = reply.value();
-            if (supportedValues.count() != effectNames.count()) {
-                return;
+            if (supportedValues.size() != effectNames.size()) {
+                qWarning() << "KWin returned an unexpected number of effect support values:"
+                           << supportedValues.size() << "expected" << effectNames.size()
+                           << "- committing the model with available support data.";
             }
 
-            for (int i = 0; i < effectNames.size(); ++i) {
+            const auto supportedCount = std::min(supportedValues.size(), effectNames.size());
+            for (qsizetype i = 0; i < supportedCount; ++i) {
                 const bool supported = supportedValues.at(i);
                 const QString effectName = effectNames.at(i);
 

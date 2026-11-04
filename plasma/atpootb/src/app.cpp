@@ -200,7 +200,7 @@ void App::applyLookAndFeel()
     QFont font = QFont(QStringLiteral("Segoe UI"), 9);
     font.setStyleName(QStringLiteral("Regular"));
     QFont fontSmall = QFont(QStringLiteral("Segoe UI"), 8);
-    font.setStyleName(QStringLiteral("Regular"));
+    fontSmall.setStyleName(QStringLiteral("Regular"));
     KConfigGroup generalGroup = kdeglobalsConfig.group(QStringLiteral("General"));
     generalGroup.writeEntry(QStringLiteral("font"), font);
     generalGroup.writeEntry(QStringLiteral("smallestReadableFont"), fontSmall);
