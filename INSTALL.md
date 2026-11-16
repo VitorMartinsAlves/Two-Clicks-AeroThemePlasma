@@ -126,6 +126,8 @@ Run the following script:
 
 ```sh
 $ bash install.sh [--skip-x11] # --skip-x11 to skip building X11 components
+
+Only one source installation can run per user at a time. The installer acquires a non-blocking lock automatically; a second invocation exits instead of sharing the same build directories or writing manifests concurrently. The lock is released when the installer process exits.
 ``` 
 
 **NOTE:** The `--ninja` argument has been replaced for `CMAKE_GENERATOR`. Set `CMAKE_GENERATOR=Ninja` before running the script if you wish to use Ninja instead. Like so:
