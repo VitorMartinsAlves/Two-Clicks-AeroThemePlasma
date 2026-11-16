@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-# shellcheck source=../scripts/install_manifest.sh
+# shellcheck source=scripts/install_manifest.sh
 source "$ROOT/scripts/install_manifest.sh"
 
 TMP="$(mktemp -d)"
