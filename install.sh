@@ -4,6 +4,10 @@ set -Eeuo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 CUR_DIR="$SCRIPT_DIR"
 
+# Keep an uninstallable inventory across upgrades and repeated installs.
+# shellcheck source=scripts/install_manifest.sh
+source "$SCRIPT_DIR/scripts/install_manifest.sh"
+
 log() {
     printf '\033[1;34m==>\033[0m %s\n' "$*"
 }
@@ -232,7 +236,8 @@ copy_manifest() {
     local manifest_target=$2
 
     if [[ -f "$manifest_source" ]]; then
-        cp "$manifest_source" "$CUR_DIR/manifest/$manifest_target"
+        merge_install_manifest "$manifest_source" "$CUR_DIR/manifest/$manifest_target"
+        log "Manifest acumulado: $manifest_target"
     else
         warn "Manifest nao encontrado: $manifest_source"
     fi
