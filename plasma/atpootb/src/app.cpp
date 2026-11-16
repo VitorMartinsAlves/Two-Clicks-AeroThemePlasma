@@ -18,7 +18,67 @@
 #include <QFileInfo>
 
 #include "effectsmodel.h"
+#include "rollbackstate.h"
 
+#include <QStandardPaths>
+
+
+namespace
+{
+QString userRollbackManifestPath()
+{
+    return QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
+        + QStringLiteral("/aerothemeplasma/rollback/user.json");
+}
+
+QStringList userRollbackPaths()
+{
+    const QString config = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation);
+    return {
+        config + QStringLiteral("/kdeglobals"),
+        config + QStringLiteral("/kwinrc"),
+        config + QStringLiteral("/plasmarc"),
+        config + QStringLiteral("/kcminputrc"),
+        config + QStringLiteral("/kcmfonts"),
+        config + QStringLiteral("/ksplashrc"),
+        config + QStringLiteral("/kwinrulesrc"),
+        config + QStringLiteral("/kscreenlockerrc"),
+        config + QStringLiteral("/plasma-org.kde.plasma.desktop-appletsrc"),
+        config + QStringLiteral("/aerothemeplasmarc"),
+        config + QStringLiteral("/Kvantum/kvantum.kvconfig")
+    };
+}
+
+bool beginUserRollback()
+{
+    const bool result = AtpRollback::backupFiles(userRollbackPaths(), userRollbackManifestPath());
+    if (!result) {
+        qCritical() << "Could not create the AeroThemePlasma user configuration backup.";
+    }
+    return result;
+}
+
+bool captureUserRollback()
+{
+    const bool result = AtpRollback::captureExpectedState(userRollbackManifestPath());
+    if (!result) {
+        qWarning() << "Could not update the AeroThemePlasma user rollback snapshot.";
+    }
+    return result;
+}
+
+bool runSystemRollbackAction(const QString &actionName)
+{
+    KAuth::Action action(actionName);
+    action.setHelperId(QStringLiteral("io.gitgud.wackyideas.ootb"));
+    const auto job = action.execute();
+    if (!job->exec()) {
+        qWarning() << "System rollback action failed:" << actionName << job->errorString() << job->errorText();
+        return false;
+    }
+    return true;
+}
+} // namespace
 
 App::App()
 {
@@ -73,6 +133,12 @@ void App::syncPlasmaWithSDDM()
     const QString plasmarcPath = QStandardPaths::locate(QStandardPaths::GenericConfigLocation, QStringLiteral("plasmarc"));
     const QString kcminputrcPath = QStandardPaths::locate(QStandardPaths::GenericConfigLocation, QStringLiteral("kcminputrc"));
     const QString kwinoutputconfigPath = QStandardPaths::locate(QStandardPaths::GenericConfigLocation, QStringLiteral("kwinoutputconfig.json"));
+
+    // Preserve SDDM's current settings before the upstream helper synchronizes them.
+    if (!runSystemRollbackAction(QStringLiteral("io.gitgud.wackyideas.ootb.backup"))) {
+        qWarning() << "Skipping SDDM synchronization because its rollback snapshot could not be created.";
+        return;
+    }
 
     // send values and paths to helper, debug if it fails
     QVariantMap args;
@@ -166,6 +232,9 @@ void App::syncPlasmaWithSDDM()
             qWarning() << job->errorString() << job->errorText();
         }
     }
+
+    // Capture final values even if synchronization failed part-way through.
+    runSystemRollbackAction(QStringLiteral("io.gitgud.wackyideas.ootb.capture"));
 }
 
 void App::setCursorThemeSDDM()
@@ -195,6 +264,10 @@ void App::setCursorThemeSDDM()
 
 void App::applyLookAndFeel()
 {
+    if (!beginUserRollback()) {
+        return;
+    }
+
     // Font config
     KConfig kdeglobalsConfig(QStringLiteral("kdeglobals"));
     QFont font = QFont(QStringLiteral("Segoe UI"), 9);
@@ -239,27 +312,34 @@ void App::applyLookAndFeel()
 
     QDBusMessage kwinDbus = QDBusMessage::createMethodCall(QStringLiteral("org.kde.KWin"), QStringLiteral("/KWin"),
                                                            QStringLiteral(""), QStringLiteral("reconfigure"));
-    if(!QDBusConnection::sessionBus().send(kwinDbus))
-    {
-        qWarning() << "DBus kwin failed!";
-        return;
+    if (!QDBusConnection::sessionBus().send(kwinDbus)) {
+        qWarning() << "DBus KWin reconfigure request failed; continuing the remaining look-and-feel steps.";
     }
 
-    // Apply Global Theme
-    qInfo() << QProcess::startDetached("plasma-apply-lookandfeel", { "-a", "authui7" });
-    // Apply Kvantum theme (Windows7Aero)
-    qInfo() << QProcess::execute("kvantummanager", { "--set", "Windows7Aero" });
-    qInfo() << QProcess::execute("plasma-apply-cursortheme", { "aero-drop", "--size", "32" });
-    qInfo() << QProcess::execute("aeroshell_update_default_rules", { "aeroshell.rules" });
+    // Run synchronously so the rollback snapshot records the completed state.
+    qInfo() << "plasma-apply-lookandfeel exit code:"
+            << QProcess::execute("plasma-apply-lookandfeel", { "-a", "authui7" });
+    qInfo() << "kvantummanager exit code:"
+            << QProcess::execute("kvantummanager", { "--set", "Windows7Aero" });
+    qInfo() << "plasma-apply-cursortheme exit code:"
+            << QProcess::execute("plasma-apply-cursortheme", { "aero-drop", "--size", "32" });
+    qInfo() << "aeroshell_update_default_rules exit code:"
+            << QProcess::execute("aeroshell_update_default_rules", { "aeroshell.rules" });
 
+    captureUserRollback();
 }
 void App::saveOotbConfig(bool reset)
 {
+    if (!beginUserRollback()) {
+        return;
+    }
+
     qInfo() << QProcess::execute("plasma-apply-cursortheme", { "breeze_cursors" }); // Prevent breeze cursor theme from showing up momentarily on splash screen
     KConfig ootbConfig(QStringLiteral("aerothemeplasmarc"));
     ootbConfig.group(QStringLiteral("OOTB")).writeEntry(QStringLiteral("wizardRun"), reset);
     ootbConfig.sync();
     qInfo() << QProcess::execute("plasma-apply-cursortheme", { "aero-drop", "--size", "32" });
+    captureUserRollback();
 }
 
 #include "moc_app.cpp"

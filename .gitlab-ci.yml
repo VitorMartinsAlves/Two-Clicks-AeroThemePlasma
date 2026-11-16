@@ -1,7 +1,17 @@
 image: "archlinux:latest"
 
 stages:
+  - test
   - build
+
+test-safety:
+  image: "archlinux:latest"
+  stage: test
+  before_script:
+    - pacman-key --init
+    - pacman -Syu --needed --noconfirm bash python shellcheck
+  script:
+    - bash tests/run.sh
 
 build-linux-x64:
   stage: build

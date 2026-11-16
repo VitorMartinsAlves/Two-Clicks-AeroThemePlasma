@@ -55,7 +55,7 @@ ecm_find_qmlmodule(org.kde.kirigamiaddons.formcard 1.0)
 kauth_install_actions(io.gitgud.wackyideas.ootb kauth.actions)
 
 add_executable(ootbcursor_authhelper src/ootbauthhelper.cpp src/ootbauthhelper.h)
-target_link_libraries(ootbcursor_authhelper KF6::AuthCore KF6::ConfigCore KF6::I18n Qt6::DBus Qt6::Core)
+target_link_libraries(ootbcursor_authhelper KF6::AuthCore KF6::ConfigCore KF6::CoreAddons KF6::I18n Qt6::DBus Qt6::Core)
 
 install(TARGETS ootbcursor_authhelper DESTINATION ${KAUTH_HELPER_INSTALL_DIR})
 kauth_install_helper_files(ootbcursor_authhelper io.gitgud.wackyideas.ootb root)
