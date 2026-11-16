@@ -9,17 +9,17 @@ merge_install_manifest() {
     local temporary
 
     if [[ ! -f "$source" ]]; then
-        printf 'Erro: manifesto de origem nao encontrado: %s\\n' "$source" >&2
+        printf 'Erro: manifesto de origem nao encontrado: %s\n' "$source" >&2
         return 1
     fi
 
     if [[ "$source" == "$target" ]]; then
-        printf 'Erro: o manifesto de origem e o destino sao iguais: %s\\n' "$source" >&2
+        printf 'Erro: o manifesto de origem e o destino sao iguais: %s\n' "$source" >&2
         return 1
     fi
 
     if ! mkdir -p -- "$(dirname -- "$target")"; then
-        printf 'Erro: nao foi possivel criar o diretorio do manifesto: %s\\n' "$(dirname -- "$target")" >&2
+        printf 'Erro: nao foi possivel criar o diretorio do manifesto: %s\n' "$(dirname -- "$target")" >&2
         return 1
     fi
 
@@ -32,7 +32,7 @@ merge_install_manifest() {
         fi
         if ! chmod --reference="$target" "$temporary"; then
             rm -f -- "$temporary"
-            printf 'Erro: nao foi possivel preservar as permissoes do manifesto: %s\\n' "$target" >&2
+            printf 'Erro: nao foi possivel preservar as permissoes do manifesto: %s\n' "$target" >&2
             return 1
         fi
     else
