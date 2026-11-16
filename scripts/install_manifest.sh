@@ -60,12 +60,12 @@ record_install_manifest() {
     local target="$2"
 
     if [[ ! -f "$source" || ! -r "$source" ]]; then
-        printf 'Erro: manifesto de instalacao ausente ou ilegivel: %s\\n' "$source" >&2
+        printf 'Erro: manifesto de instalacao ausente ou ilegivel: %s\n' "$source" >&2
         return 1
     fi
 
     if ! merge_install_manifest "$source" "$target"; then
-        printf 'Erro: nao foi possivel registrar o manifesto permanente: %s\\n' "$target" >&2
+        printf 'Erro: nao foi possivel registrar o manifesto permanente: %s\n' "$target" >&2
         return 1
     fi
 }
