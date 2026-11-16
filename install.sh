@@ -59,14 +59,14 @@ done
 if [[ -f /.flatpak-info && -z "${ATP_HOST_SPAWNED:-}" && "$NO_HOST_SPAWN" -eq 0 ]]; then
     if command -v flatpak-spawn >/dev/null 2>&1; then
         log "Detectei que voce esta dentro de um sandbox Flatpak; reexecutando no sistema host."
+        # shellcheck disable=SC2016 # The command is evaluated by bash on the host.
         exec flatpak-spawn --host env ATP_HOST_SPAWNED=1 bash -lc \
-# shellcheck disable=SC2016 # The command is evaluated by bash on the host.
             'cd "$1" || exit 1; shift; exec bash ./install.sh "$@"' \
             bash "$CUR_DIR" "${ORIGINAL_ARGS[@]}"
     elif command -v host-spawn >/dev/null 2>&1; then
         log "Detectei que voce esta dentro de um sandbox Flatpak; reexecutando no sistema host."
+        # shellcheck disable=SC2016 # The command is evaluated by bash on the host.
         exec host-spawn env ATP_HOST_SPAWNED=1 bash -lc \
-# shellcheck disable=SC2016 # The command is evaluated by bash on the host.
             'cd "$1" || exit 1; shift; exec bash ./install.sh "$@"' \
             bash "$CUR_DIR" "${ORIGINAL_ARGS[@]}"
     else
