@@ -201,6 +201,8 @@ After a successful removal, consumed manifests are moved to `manifest/consumed/`
 
 During upgrades and repeated installations, each new CMake install manifest is merged into the existing project manifest. Historical paths are retained and duplicate entries are removed, so files installed by an older version remain tracked even when a newer version no longer installs them. Keep the `manifest/` directory until AeroThemePlasma has been uninstalled.
 
+The installer now treats each generated component manifest as required. If a manifest is missing or cannot be added to the persistent inventory, installation stops instead of reporting success with an incomplete uninstall record. The original manifest in the component's build directory is retained as a recovery source; do not delete build directories after such an error. Resolve the manifest problem before retrying or uninstalling.
+
 For a non-interactive run, pass `--yes`:
 
 ```bash
