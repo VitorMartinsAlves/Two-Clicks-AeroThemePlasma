@@ -51,3 +51,21 @@ merge_install_manifest() {
         return 1
     fi
 }
+
+# Record a generated manifest as a required part of a successful component install.
+# Missing manifests must not be silently ignored: the uninstaller relies on this
+# persistent inventory, while the original CMake manifest remains in its build dir.
+record_install_manifest() {
+    local source="$1"
+    local target="$2"
+
+    if [[ ! -f "$source" || ! -r "$source" ]]; then
+        printf 'Erro: manifesto de instalacao ausente ou ilegivel: %s\\n' "$source" >&2
+        return 1
+    fi
+
+    if ! merge_install_manifest "$source" "$target"; then
+        printf 'Erro: nao foi possivel registrar o manifesto permanente: %s\\n' "$target" >&2
+        return 1
+    fi
+}
