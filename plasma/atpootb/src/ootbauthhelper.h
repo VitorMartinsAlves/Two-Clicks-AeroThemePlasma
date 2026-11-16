@@ -13,6 +13,8 @@ class OotbAuthHelper : public QObject
 
 public Q_SLOTS:
     ActionReply apply(const QVariantMap &args);
+    ActionReply backup(const QVariantMap &args);
+    ActionReply capture(const QVariantMap &args);
 };
 
 #endif // OOTBAUTHHELPER_H

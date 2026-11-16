@@ -3,12 +3,14 @@
 #include "ootbauthhelper.h"
 
 #include <KConfig>
+#include <KUser>
 #include <QDebug>
 #include <QDir>
 #include <QFile>
 #include <QFileDevice>
 #include <QFileInfo>
 #include <QSharedPointer>
+#include "rollbackstate.h"
 #include <algorithm>
 
 static QSharedPointer<KConfig> openConfig(const QString &filePath)
@@ -49,9 +51,69 @@ static QSharedPointer<KConfig> openConfig(const QString &filePath)
     return QSharedPointer<KConfig>(new KConfig(file.fileName(), KConfig::SimpleConfig));
 }
 
+namespace
+{
+QString systemRollbackManifestPath()
+{
+    return QStringLiteral("/var/lib/aerothemeplasma/rollback/system.json");
+}
+
+QStringList systemRollbackPaths()
+{
+    QStringList paths{
+        QStringLiteral("/usr/share/icons/default/index.theme"),
+        QStringLiteral("/etc/sddm.conf"),
+        QStringLiteral("/etc/sddm.conf.d/kde_settings.conf")
+    };
+
+    const QString sddmHome = KUser(QStringLiteral("sddm")).homeDir();
+    if (!sddmHome.isEmpty()) {
+        const QString config = QDir(sddmHome).filePath(QStringLiteral(".config"));
+        paths.append({
+            QDir(config).filePath(QStringLiteral("kdeglobals")),
+            QDir(config).filePath(QStringLiteral("plasmarc")),
+            QDir(config).filePath(QStringLiteral("kcminputrc")),
+            QDir(config).filePath(QStringLiteral("kcmfonts")),
+            QDir(config).filePath(QStringLiteral("kwinoutputconfig.json")),
+            QDir(config).filePath(QStringLiteral("fontconfig/fonts.conf"))
+        });
+    }
+
+    return paths;
+}
+} // namespace
+
+ActionReply OotbAuthHelper::backup(const QVariantMap &args)
+{
+    Q_UNUSED(args);
+    if (!AtpRollback::backupFiles(systemRollbackPaths(), systemRollbackManifestPath())) {
+        ActionReply reply = ActionReply::HelperErrorReply();
+        reply.setErrorDescription(QStringLiteral("Could not create the system configuration backup."));
+        return reply;
+    }
+    return ActionReply::SuccessReply();
+}
+
+ActionReply OotbAuthHelper::capture(const QVariantMap &args)
+{
+    Q_UNUSED(args);
+    if (!AtpRollback::captureExpectedState(systemRollbackManifestPath())) {
+        ActionReply reply = ActionReply::HelperErrorReply();
+        reply.setErrorDescription(QStringLiteral("Could not record the applied system configuration state."));
+        return reply;
+    }
+    return ActionReply::SuccessReply();
+}
+
 ActionReply OotbAuthHelper::apply(const QVariantMap &args)
 {
     Q_UNUSED(args);
+
+    if (!AtpRollback::backupFiles(systemRollbackPaths(), systemRollbackManifestPath())) {
+        ActionReply reply = ActionReply::HelperErrorReply();
+        reply.setErrorDescription(QStringLiteral("Could not create the system cursor configuration backup."));
+        return reply;
+    }
 
     const QString path = QStringLiteral("/usr/share/icons/default/index.theme");
     const QString groupName = QStringLiteral("Icon Theme");
@@ -82,6 +144,12 @@ ActionReply OotbAuthHelper::apply(const QVariantMap &args)
         ActionReply reply = ActionReply::HelperErrorReply();
         reply.setErrorDescription(QStringLiteral("Failed to write the system cursor configuration."));
         qWarning() << "Failed to sync cursor configuration:" << path;
+        return reply;
+    }
+
+    if (!AtpRollback::captureExpectedState(systemRollbackManifestPath())) {
+        ActionReply reply = ActionReply::HelperErrorReply();
+        reply.setErrorDescription(QStringLiteral("Cursor changed, but its rollback state could not be recorded."));
         return reply;
     }
 

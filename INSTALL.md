@@ -180,24 +180,37 @@ When doing a full system upgrade, KWin effects and `libplasma` modifications ten
 
 ### Uninstalling AeroThemePlasma
 
-Uninstalling AeroThemePlasma can be done by running the following script:
+Run the uninstaller as your regular desktop user (do not prefix the script with `sudo`):
 
 ```bash
 $ bash uninstall.sh
 ```
 
-The script reads the CMake `install_manifest.txt` files saved in `manifest/` and the project build directories, then removes only existing paths recorded under `/usr`. It asks for confirmation before deleting anything. For a non-interactive run, pass `--yes`:
+Before deleting files, the script restores configuration snapshots created by the first-run wizard. A file is restored only if its current content still matches the state recorded immediately after AeroThemePlasma applied it. Files edited later by the user are left untouched, and their snapshots are retained for manual review.
+
+The snapshots are stored with restricted permissions:
+
+- User settings: `$XDG_CONFIG_HOME/aerothemeplasma/rollback/user.json` (normally `~/.config/aerothemeplasma/rollback/user.json`).
+- System and SDDM settings: `/var/lib/aerothemeplasma/rollback/system.json` (root-owned).
+
+The CMake `install_manifest.txt` files are then checked against the package databases available on the system (`pacman`, `dpkg`, `rpm` and/or `apk`). Files owned by an installed distribution package are preserved. Paths outside `/usr`, paths containing traversal components, and duplicate manifest entries are ignored. If no supported package database is available, the uninstaller stops instead of guessing which files are safe to remove.
+
+After a successful removal, consumed manifests are moved to `manifest/consumed/`. This prevents a later uninstall run from reusing stale paths and deleting files restored by the distribution package.
+
+For a non-interactive run, pass `--yes`:
 
 ```bash
 $ bash uninstall.sh --yes
 ```
 
-The source-built `libplasma` files are included when their manifest is available. Reinstall your distribution's `libplasma` package after the removal. 
+The source-built `libplasma` files may be preserved when the package manager still records ownership for those paths. Reinstall your distribution's `libplasma` package after the removal to restore its packaged files:
 
 ```bash
 # On Arch Linux
 $ sudo pacman -S libplasma
 ```
+
+If the uninstaller reports a rollback conflict, it leaves the changed file alone and keeps the corresponding snapshot. Review the reported backup path before manually deleting it. Do not remove the backup while a conflict is unresolved.
 
 ### Fonts 
 

@@ -7,3 +7,13 @@ URL=https://gitgud.io/wackyideas/aerothemeplasma
 Name=Apply Cursor Theme
 Description=Set global default cursor theme required for SDDM
 Policy=auth_admin
+
+[io.gitgud.wackyideas.ootb.backup]
+Name=Back up system settings before applying AeroThemePlasma
+Description=Create a protected rollback snapshot of the system settings changed by AeroThemePlasma
+Policy=auth_admin_keep
+
+[io.gitgud.wackyideas.ootb.capture]
+Name=Record AeroThemePlasma system settings
+Description=Record the resulting system settings for safe rollback
+Policy=auth_admin_keep
