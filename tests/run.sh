@@ -20,7 +20,7 @@ bash tests/test_uninstall.sh
 
 if command -v shellcheck >/dev/null 2>&1; then
     echo "==> ShellCheck"
-    shellcheck uninstall.sh scripts/install_manifest.sh tests/run.sh tests/test_install_manifest.sh tests/test_uninstall.sh
+    shellcheck -x uninstall.sh scripts/install_manifest.sh tests/run.sh tests/test_install_manifest.sh tests/test_uninstall.sh
 else
     echo "==> ShellCheck not installed; skipped"
 fi
