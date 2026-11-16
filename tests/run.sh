@@ -5,21 +5,24 @@ ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 echo "==> Bash syntax checks"
-for script in install.sh uninstall.sh migration-uninstall.sh scripts/setup_terminal.sh tests/test_uninstall.sh tests/run.sh; do
+for script in install.sh uninstall.sh migration-uninstall.sh scripts/setup_terminal.sh scripts/install_manifest.sh tests/test_install_manifest.sh tests/test_uninstall.sh tests/run.sh; do
     bash -n "$script"
 done
 
 echo "==> Python rollback tests"
 python3 -m unittest discover -s tests -p 'test_*.py' -v
 
+echo "==> Cumulative install manifest tests"
+bash tests/test_install_manifest.sh
+
 echo "==> Installer/uninstaller integration test"
 bash tests/test_uninstall.sh
 
 if command -v shellcheck >/dev/null 2>&1; then
     echo "==> ShellCheck"
-    shellcheck uninstall.sh tests/run.sh tests/test_uninstall.sh
+    shellcheck uninstall.sh scripts/install_manifest.sh tests/run.sh tests/test_install_manifest.sh tests/test_uninstall.sh
 else
     echo "==> ShellCheck not installed; skipped"
 fi
 
-echo "All Stage 1 tests passed."
+echo "All repository safety tests passed."
