@@ -7,6 +7,9 @@ CUR_DIR="$SCRIPT_DIR"
 # Keep an uninstallable inventory across upgrades and repeated installs.
 # shellcheck source=scripts/install_manifest.sh
 source "$SCRIPT_DIR/scripts/install_manifest.sh"
+# Prevent concurrent runs from sharing build directories or writing manifests at once.
+# shellcheck source=scripts/installer_lock.sh
+source "$SCRIPT_DIR/scripts/installer_lock.sh"
 
 log() {
     printf '\033[1;34m==>\033[0m %s\n' "$*"
@@ -56,11 +59,13 @@ done
 if [[ -f /.flatpak-info && -z "${ATP_HOST_SPAWNED:-}" && "$NO_HOST_SPAWN" -eq 0 ]]; then
     if command -v flatpak-spawn >/dev/null 2>&1; then
         log "Detectei que voce esta dentro de um sandbox Flatpak; reexecutando no sistema host."
+        # shellcheck disable=SC2016 # The command is evaluated by bash on the host.
         exec flatpak-spawn --host env ATP_HOST_SPAWNED=1 bash -lc \
             'cd "$1" || exit 1; shift; exec bash ./install.sh "$@"' \
             bash "$CUR_DIR" "${ORIGINAL_ARGS[@]}"
     elif command -v host-spawn >/dev/null 2>&1; then
         log "Detectei que voce esta dentro de um sandbox Flatpak; reexecutando no sistema host."
+        # shellcheck disable=SC2016 # The command is evaluated by bash on the host.
         exec host-spawn env ATP_HOST_SPAWNED=1 bash -lc \
             'cd "$1" || exit 1; shift; exec bash ./install.sh "$@"' \
             bash "$CUR_DIR" "${ORIGINAL_ARGS[@]}"
@@ -80,6 +85,14 @@ if ! command -v "$SU_CMD" >/dev/null 2>&1; then
         die "Nao encontrei sudo nem doas no sistema."
     fi
 fi
+
+LOCK_DIR=/tmp
+if [[ -n "${XDG_RUNTIME_DIR:-}" && -d "$XDG_RUNTIME_DIR" && -w "$XDG_RUNTIME_DIR" ]]; then
+    LOCK_DIR="$XDG_RUNTIME_DIR"
+fi
+LOCK_FILE="$LOCK_DIR/aerothemeplasma-install-${UID}.lock"
+acquire_installer_lock "$LOCK_FILE" || die "Ja existe outra instalacao do AeroThemePlasma em execucao para este usuario."
+log "Bloqueio de instalacao adquirido."
 
 has_arg() {
     local wanted=$1
@@ -256,6 +269,7 @@ patch_aeroshell_kwin_components() {
 
     for cmake_file in "${files[@]}"; do
         [[ -f "$cmake_file" ]] || continue
+        # shellcheck disable=SC2016 # The CMake variable is a literal sed pattern.
         sed -i '/^add_definitions(${Qt6Widgets_DEFINITIONS})$/d' "$cmake_file"
     done
 }
