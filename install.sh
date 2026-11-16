@@ -60,11 +60,13 @@ if [[ -f /.flatpak-info && -z "${ATP_HOST_SPAWNED:-}" && "$NO_HOST_SPAWN" -eq 0 
     if command -v flatpak-spawn >/dev/null 2>&1; then
         log "Detectei que voce esta dentro de um sandbox Flatpak; reexecutando no sistema host."
         exec flatpak-spawn --host env ATP_HOST_SPAWNED=1 bash -lc \
+# shellcheck disable=SC2016 # The command is evaluated by bash on the host.
             'cd "$1" || exit 1; shift; exec bash ./install.sh "$@"' \
             bash "$CUR_DIR" "${ORIGINAL_ARGS[@]}"
     elif command -v host-spawn >/dev/null 2>&1; then
         log "Detectei que voce esta dentro de um sandbox Flatpak; reexecutando no sistema host."
         exec host-spawn env ATP_HOST_SPAWNED=1 bash -lc \
+# shellcheck disable=SC2016 # The command is evaluated by bash on the host.
             'cd "$1" || exit 1; shift; exec bash ./install.sh "$@"' \
             bash "$CUR_DIR" "${ORIGINAL_ARGS[@]}"
     else
@@ -267,6 +269,7 @@ patch_aeroshell_kwin_components() {
 
     for cmake_file in "${files[@]}"; do
         [[ -f "$cmake_file" ]] || continue
+        # shellcheck disable=SC2016 # The CMake variable is a literal sed pattern.
         sed -i '/^add_definitions(${Qt6Widgets_DEFINITIONS})$/d' "$cmake_file"
     done
 }
