@@ -47,4 +47,24 @@ if merge_install_manifest "$SOURCE" "$SOURCE" >/dev/null 2>&1; then
     exit 1
 fi
 
-echo "PASS: cumulative install manifests preserve historical paths and deduplicate updates"
+# A missing generated manifest is a hard failure, not a warning that allows
+# the installer to report success without a persistent uninstall inventory.
+if record_install_manifest "$TMP/missing-generated-manifest.txt" "$TARGET" >/dev/null 2>&1; then
+    echo "FAIL: missing generated manifest was silently accepted"
+    exit 1
+fi
+[[ "$(cat "$TARGET")" == "$before" ]] || { echo "FAIL: missing manifest changed the persistent inventory"; exit 1; }
+
+# A directory must not be accepted in place of a generated manifest either.
+mkdir -p "$TMP/not-a-manifest"
+if record_install_manifest "$TMP/not-a-manifest" "$TARGET" >/dev/null 2>&1; then
+    echo "FAIL: directory was accepted as a generated manifest"
+    exit 1
+fi
+[[ "$(cat "$TARGET")" == "$before" ]] || { echo "FAIL: invalid manifest changed the persistent inventory"; exit 1; }
+
+# Valid generated manifest must be recorded as part of the component install.
+record_install_manifest "$SOURCE" "$TARGET"
+[[ "$(grep -Fxc '/usr/share/aerothemeplasma/new-file.qml' "$TARGET")" -eq 1 ]] || { echo "FAIL: required manifest record was not persisted"; exit 1; }
+
+echo "PASS: cumulative manifests are retained and every successful component install requires a readable manifest"
