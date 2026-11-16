@@ -247,13 +247,13 @@ build_install_cmake() {
 copy_manifest() {
     local manifest_source=$1
     local manifest_target=$2
+    local manifest_destination="$CUR_DIR/manifest/$manifest_target"
 
-    if [[ -f "$manifest_source" ]]; then
-        merge_install_manifest "$manifest_source" "$CUR_DIR/manifest/$manifest_target"
-        log "Manifest acumulado: $manifest_target"
-    else
-        warn "Manifest nao encontrado: $manifest_source"
+    if ! record_install_manifest "$manifest_source" "$manifest_destination"; then
+        die "O componente ja pode ter instalado arquivos, mas seu manifesto nao foi registrado. Nao apague os diretorios de build; eles contem o manifesto original para recuperacao: $manifest_source"
     fi
+
+    log "Manifest acumulado: $manifest_target"
 }
 
 patch_aeroshell_kwin_components() {
@@ -279,6 +279,7 @@ set_install_dirs
 ensure_tools
 
 mkdir -p "$CUR_DIR/repos" "$CUR_DIR/manifest"
+[[ -d "$CUR_DIR/manifest" && -w "$CUR_DIR/manifest" && ! -L "$CUR_DIR/manifest" ]] || die "O diretorio manifest/ precisa ser gravavel e nao pode ser link simbolico."
 cd "$CUR_DIR/repos"
 
 clone_or_update https://gitgud.io/aeroshell/libplasma.git libplasma
